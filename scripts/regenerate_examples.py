@@ -24,6 +24,7 @@ EXAMPLES = ROOT / "reports" / "examples"
 RUNS = [
     ("monthly-sales-report", "config/examples/monthly_sales.yaml"),
     ("sales-vs-targets", "config/examples/sales_vs_targets.yaml"),
+    ("monthly-sales-by-category", "config/examples/monthly_sales_by_category.yaml"),
 ]
 PARAMETERS = ["--param", "period=2026-09"]
 

@@ -21,7 +21,7 @@ computed with the code under test.
 | `tests/unit/` | YAML loader, configuration models, parameters and paths, validation, types, readers, each step type, registry and writers |
 | `tests/integration/` | Complete runs of the engine on real files, including every failure scenario |
 | `tests/cli/` | Commands, options, exit codes, output streams, installed command and module in subprocesses, another working directory, the Task Scheduler wrapper |
-| `tests/test_examples.py` | The committed examples (`reports/examples/`) equal a fresh run; the sample workbook generator reproduces the committed file |
+| `tests/test_examples.py` | The committed examples (`reports/examples/`) equal a fresh run; the [demo](demo-monthly-sales.md) KPIs are recomputed with the standard library only and checked against the CSV, XLSX and recorded SHA-256; the sample workbook generator reproduces the committed file |
 | `tests/test_project.py` | Packaging (version, entry point, dependencies = imports, pinned versions, no dependency on service 1), module list, documentation links and anchors, README commands and output |
 
 ## Acceptance criteria (specification §14)

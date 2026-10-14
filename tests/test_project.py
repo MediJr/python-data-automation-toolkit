@@ -120,7 +120,7 @@ def test_readme_commands_are_valid_for_the_real_parser():
         for line in block.splitlines()
         if line.startswith(("data-automate ", "python -m data_automation "))
     ]
-    assert len(commands) == 4
+    assert len(commands) == 5
     parser = build_parser()
     for line in commands:
         argv = shlex.split(line)
@@ -142,3 +142,17 @@ def test_readme_output_excerpt_matches_the_real_command(capsys):
             assert line.split(" (")[0] in actual[0]
             continue
         assert line in actual, line
+
+
+def test_readme_yaml_example_is_a_valid_workflow(tmp_path, capsys):
+    """The commented excerpt in the README validates against the real schema and step registry."""
+    from data_automation.cli import main
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    block = re.search(r"```yaml\n(.*?)```", text, flags=re.S).group(1)
+    workflow = ROOT / "config" / "examples" / f"_readme_{tmp_path.name}.yaml"
+    workflow.write_text(block, encoding="utf-8")
+    try:
+        assert main(["validate", str(workflow), "--param", "period=2026-09"]) == 0, capsys.readouterr().err
+    finally:
+        workflow.unlink()

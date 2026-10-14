@@ -184,41 +184,96 @@ South,200.00,1
 ```
 
 The second example also reads `data/sample/reference/targets.xlsx` and writes
-`output/sales_vs_targets_2026-09.csv` and `.xlsx`. All the files produced by both examples —
+`output/sales_vs_targets_2026-09.csv` and `.xlsx`. All the files produced by the examples —
 outputs, metadata, reports and logs — are committed, unedited, in
 [reports/examples/](reports/examples/sales-vs-targets/run/run_report.md); a test checks
 that they still match a fresh run.
 
+## Demo: monthly sales by product category
+
+A reproducible end-to-end scenario on synthetic data, documented step by step in
+[docs/demo-monthly-sales.md](docs/demo-monthly-sales.md):
+
+```text
+lines_store_a.csv ┐
+lines_store_b.csv ┴─ concatenate ─ check ─ filter (completed) ─ join on sku ◄─ products.csv
+   ─ rename + select ──────────────────────────────► order_lines_enriched_2026-09.csv
+   ─ aggregate per category ─ sort by revenue ─────► sales_by_category_2026-09.csv / .xlsx
+```
+
+```bash
+data-automate run config/examples/monthly_sales_by_category.yaml --param period=2026-09
+```
+
+Observed results (real run, committed in
+[reports/examples/monthly-sales-by-category/](reports/examples/monthly-sales-by-category/run/run_report.md)):
+
+| Measure | Value |
+| --- | --- |
+| Rows read | 11 order lines (2 files) + 6 catalog rows |
+| After validation / filter | 11 / 9 (2 cancelled lines excluded) |
+| Lines matched with a product | 9 of 9 |
+| KPIs | Furniture 447.00 · Lighting 228.50 · Stationery 141.00 (total 816.50) |
+| Files | 2 CSV + 1 XLSX, each read back and verified, each with metadata (UUID v4 run id, SHA-256) |
+| Status / duration | `success`, exit code 0, 0.09 s inside the run |
+
+The KPIs are also recomputed by a test that uses only the standard library (`csv`,
+`Decimal`) and checks the CSV, the XLSX cells and every recorded SHA-256.
+
 ## Workflow configuration
 
+A workflow file declares *what* to do; the engine decides nothing on its own. Commented
+excerpt of [config/examples/monthly_sales_by_category.yaml](config/examples/monthly_sales_by_category.yaml):
+
 ```yaml
-workflow: {id: monthly-sales-report, schema_version: 1, root: ../..}
+workflow:
+  id: monthly-sales-by-category    # names the run folder: runs/monthly-sales-by-category/<run id>/
+  schema_version: 1
+  root: ../..                      # working root; no path may leave it
 parameters:
-  period: {type: month}
+  period: {type: month}            # required: --param period=2026-09
 inputs:
-  - id: sales_files
+  - id: order_lines                # every matching file becomes one part of the dataset
     type: csv
-    path: "data/sample/incoming/{period}/sales_*.csv"
-    required_columns: [region, order_id, status, amount]
-    types: {amount: decimal}
-steps:
-  - {id: consolidate_sales, type: concatenate, input: sales_files, output: sales}
-  - id: only_closed_orders
+    path: "data/sample/order_lines/{period}/lines_*.csv"
+    required_columns: [order_id, order_date, store, sku, quantity, line_amount, status]
+    types: {order_date: date, quantity: integer, line_amount: decimal}   # strict, exact decimals
+  - {id: products, type: csv, path: data/sample/reference/products.csv}
+steps:                             # run in this order; each one creates a new named dataset
+  - {id: consolidate, type: concatenate, input: order_lines, output: all_lines}
+  - id: validate_lines             # controls: the run fails if a rule is broken
+    type: check
+    input: all_lines
+    output: valid_lines
+    not_null: [order_id, sku, quantity, line_amount, status]
+    unique: [order_id, sku]
+  - id: completed_only             # declarative condition, never evaluated as code
     type: filter
-    input: sales
-    output: closed_sales
-    where: [{column: status, op: eq, value: closed}]
-  - id: calculate_kpis
+    input: valid_lines
+    output: completed_lines
+    where: [{column: status, op: eq, value: completed}]
+  - id: add_products               # relationship checked before joining: rows cannot multiply
+    type: join
+    input: [completed_lines, products]
+    output: lines_with_products
+    keys: [sku]
+    relationship: many_to_one
+    require_match: true            # every sold SKU must be in the catalog
+  - id: kpis_by_category
     type: aggregate
-    input: closed_sales
+    input: lines_with_products
     output: kpis
-    group_by: [region]
+    group_by: [category]
     metrics:
-      total_sales: {column: amount, function: sum}
-      order_count: {column: order_id, function: count}
-outputs:
-  - {id: export_powerbi, input: kpis, type: csv, path: "output/monthly_sales_{period}.csv"}
+      revenue: {function: sum, column: line_amount}
+      average_line: {function: mean, column: line_amount, round: 2}
+outputs:                           # written to a temporary file, read back, verified, then published
+  - {id: kpis_csv, input: kpis, type: csv, path: "output/sales_by_category_{period}.csv"}
+  - {id: kpis_xlsx, input: kpis, type: xlsx, path: "output/sales_by_category_{period}.xlsx"}
 ```
+
+The complete file also renames and selects columns, sorts the result and adds a
+`summary`.
 
 Full reference: [docs/configuration.md](docs/configuration.md) (all sections and path
 rules) and [docs/steps.md](docs/steps.md) (every step type and its parameters).
@@ -285,14 +340,49 @@ tests/                 unit/, integration/, cli/ and project-level tests
 docs/                  documentation (English) and specification + decisions (French)
 ```
 
+## Known limitations
+
+- Tested only on Windows 11 with Python 3.14.7; Linux, macOS and other Python versions are
+  not verified.
+- Import into Power BI Desktop has **not** been tested; the import settings are documented
+  as untested recommendations.
+- Data is processed in memory (about 110 times the input size in the benchmark).
+- No automatic resume, no internal scheduler, no parallel steps, CSV and XLSX only.
+- Excel numbers lose trailing zeros (`250.00` shows as `250`).
+- One test is skipped on Windows without the symbolic-link privilege (the same check is
+  covered by a directory-junction test).
+
+Full list: [docs/limitations.md](docs/limitations.md).
+
 ## Documentation
 
+- [Demo: monthly sales by category](docs/demo-monthly-sales.md)
 - [Configuration reference](docs/configuration.md) · [Step reference](docs/steps.md)
 - [Running workflows, reports and troubleshooting](docs/running.md)
 - [Power BI import](docs/powerbi.md) · [Scheduling](docs/scheduling.md)
 - [Architecture](docs/architecture.md) · [Testing](docs/testing.md) ·
   [Performance](docs/performance.md) · [Limitations](docs/limitations.md)
 - [Specification](docs/specification.md) and [decisions](docs/decisions/README.md) (French)
+
+## Contributing
+
+Issues and pull requests are welcome. Set up the development environment, then run the
+same checks as before a release:
+
+```powershell
+.venv\Scripts\python.exe -m pip install -e ".[dev]" -c constraints.txt
+.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe -m ruff check src tests scripts benchmarks
+.venv\Scripts\python.exe -m ruff format --check src tests scripts benchmarks
+```
+
+- A new transformation is a new step type registered with `register()`
+  ([architecture](docs/architecture.md#extending-the-step-registry)); the engine should not
+  need changes.
+- Expected values in tests are computed by hand, never copied from the tool's output.
+- If outputs change, run `scripts/regenerate_examples.py --overwrite` and review the diff;
+  `tests/test_examples.py` fails when the committed examples are stale.
+- Use synthetic data only.
 
 ## License
 

@@ -1,0 +1,10 @@
+order_id,order_date,store,sku,product,category,quantity,line_amount
+A-1001,2026-09-02,Store A,P-100,Desk lamp,Lighting,2,59.80
+A-1002,2026-09-05,Store A,P-200,Office chair,Furniture,1,149.00
+A-1003,2026-09-09,Store A,P-300,Notebook pack,Stationery,3,23.85
+A-1005,2026-09-21,Store A,P-400,Pen set,Stationery,4,51.60
+A-1006,2026-09-28,Store A,P-200,Office chair,Furniture,2,298.00
+B-2001,2026-09-03,Store B,P-300,Notebook pack,Stationery,5,39.75
+B-2002,2026-09-11,Store B,P-100,Desk lamp,Lighting,3,89.70
+B-2003,2026-09-17,Store B,P-400,Pen set,Stationery,2,25.80
+B-2005,2026-09-29,Store B,P-500,Floor lamp,Lighting,1,79.00

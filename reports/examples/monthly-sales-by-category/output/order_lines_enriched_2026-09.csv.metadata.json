@@ -1,0 +1,88 @@
+{
+  "metadata_version": 1,
+  "workflow_id": "monthly-sales-by-category",
+  "run_id": "a6979456-fd80-44b6-b836-5f4ec217f92c",
+  "generated_at": "2026-10-14T16:11:12.129Z",
+  "parameters": {
+    "period": "2026-09"
+  },
+  "output_id": "lines_csv",
+  "dataset": "enriched_lines",
+  "file": {
+    "path": "output/order_lines_enriched_2026-09.csv",
+    "type": "csv",
+    "sha256": "6c7a9f71a2df4e3a684f088adcfba809b675f92bc10e2d9c34e6bffa23584223",
+    "rows": 9,
+    "format": {
+      "encoding": "utf-8",
+      "bom": false,
+      "delimiter": ",",
+      "decimal_separator": ".",
+      "line_terminator": "LF"
+    }
+  },
+  "columns": [
+    {
+      "name": "order_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "order_date",
+      "type": "date",
+      "nullable": false
+    },
+    {
+      "name": "store",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "sku",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "product",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "quantity",
+      "type": "integer",
+      "nullable": false
+    },
+    {
+      "name": "line_amount",
+      "type": "decimal",
+      "nullable": false
+    }
+  ],
+  "decimal_places": {
+    "line_amount": 2
+  },
+  "sources": [
+    {
+      "path": "data/sample/order_lines/2026-09/lines_store_a.csv",
+      "sha256": "a7f911abee25ed94b6cd1d64b30938bf2a3dd8fdf03c93d2ec589d193d237608"
+    },
+    {
+      "path": "data/sample/order_lines/2026-09/lines_store_b.csv",
+      "sha256": "67ec0687f95a71d6a4cc538c34ce60ce29127c81044999764cd10f4a23d3de6f"
+    },
+    {
+      "path": "data/sample/reference/products.csv",
+      "sha256": "68cfe30b1b5341a8a7cd4e07c8573bb3ec8ddc27237d53a2fa5c9a63a357dabc"
+    }
+  ],
+  "checks": [
+    "columns recorded",
+    "file read back and compared value by value",
+    "9 row(s) read back"
+  ]
+}

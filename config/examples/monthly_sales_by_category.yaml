@@ -1,0 +1,116 @@
+# Monthly sales by product category (demo, docs/demo-monthly-sales.md). Synthetic data.
+# Run: data-automate run config/examples/monthly_sales_by_category.yaml --param period=2026-09
+workflow:
+  id: monthly-sales-by-category
+  schema_version: 1
+  description: Consolidate the order lines of all stores, check them, add the product catalog and compute KPIs per category.
+  root: ../..                     # project folder; every path below is relative to it
+
+parameters:
+  period:
+    type: month                   # --param period=YYYY-MM selects the folder of that month
+    description: Month to process
+
+inputs:
+  - id: order_lines               # one file per store; each file becomes one part of the dataset
+    type: csv
+    path: "data/sample/order_lines/{period}/lines_*.csv"
+    required_columns: [order_id, order_date, store, sku, quantity, line_amount, status]
+    types:
+      order_date: date
+      quantity: integer
+      line_amount: decimal        # exact decimal, never a float
+
+  - id: products                  # reference data: one row per SKU
+    type: csv
+    path: data/sample/reference/products.csv
+    required_columns: [sku, product_name, category]
+
+steps:
+  - id: consolidate               # 1. stack the files of all stores
+    type: concatenate
+    input: order_lines
+    output: all_lines
+    add_source_column: source_file
+
+  - id: validate_lines            # 2. controls: the run fails if any rule is broken
+    type: check
+    input: all_lines
+    output: valid_lines
+    min_rows: 1
+    not_null: [order_id, sku, quantity, line_amount, status]
+    unique: [order_id, sku]
+    allowed_values:
+      status: [completed, cancelled]
+
+  - id: completed_only            # 3. keep completed lines with a positive quantity
+    type: filter
+    input: valid_lines
+    output: completed_lines
+    where:
+      - {column: status, op: eq, value: completed}
+      - {column: quantity, op: ge, value: 1}
+
+  - id: add_products              # 4. each line gets its product; every SKU must be in the catalog
+    type: join
+    input: [completed_lines, products]
+    output: lines_with_products
+    keys: [sku]
+    relationship: many_to_one     # fails if a SKU appears twice in the catalog
+    how: inner
+    require_match: true           # fails if a sold SKU is missing from the catalog
+
+  - id: name_columns              # 5. rename, then keep the reporting columns in order
+    type: rename
+    input: lines_with_products
+    output: renamed_lines
+    columns: {product_name: product}
+
+  - id: detail_columns
+    type: select
+    input: renamed_lines
+    output: enriched_lines
+    columns: [order_id, order_date, store, sku, product, category, quantity, line_amount]
+
+  - id: kpis_by_category          # 6. indicators per category
+    type: aggregate
+    input: enriched_lines
+    output: kpis
+    group_by: [category]
+    metrics:
+      revenue: {function: sum, column: line_amount}
+      units: {function: sum, column: quantity}
+      order_lines: {function: count}
+      average_line: {function: mean, column: line_amount, round: 2}
+
+  - id: order_by_revenue          # 7. highest revenue first
+    type: sort
+    input: kpis
+    output: category_kpis
+    by:
+      - {column: revenue, descending: true}
+
+outputs:                          # 8. written to temporary files, read back, verified, then published
+  - id: lines_csv
+    input: enriched_lines
+    type: csv
+    path: "output/order_lines_enriched_{period}.csv"
+
+  - id: kpis_csv
+    input: category_kpis
+    type: csv
+    path: "output/sales_by_category_{period}.csv"
+    expected_columns: [category, revenue, units, order_lines, average_line]
+
+  - id: kpis_xlsx
+    input: category_kpis
+    type: xlsx
+    path: "output/sales_by_category_{period}.xlsx"
+    sheet_name: Sales by category
+
+on_error: stop
+report:                           # 9. run_report.json/.md, run.log and the business summary
+  formats: [json, markdown]
+  summary:
+    title: Sales by product category
+    datasets: [category_kpis]
