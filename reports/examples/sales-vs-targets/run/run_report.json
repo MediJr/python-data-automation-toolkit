@@ -1,0 +1,292 @@
+{
+  "report_version": 1,
+  "tool": {
+    "name": "python-data-automation-toolkit",
+    "version": "0.1.0"
+  },
+  "workflow": {
+    "id": "sales-vs-targets",
+    "file": "sales_vs_targets.yaml",
+    "description": "Monthly sales per region compared with the regional targets"
+  },
+  "run_id": "4b7bd482-f725-4a12-b0d4-053b69d0532c",
+  "started_at": "2026-10-14T03:18:57.504Z",
+  "finished_at": "2026-10-14T03:18:57.577Z",
+  "duration_s": 0.072,
+  "status": "success",
+  "exit_code": 0,
+  "on_error": "stop",
+  "overwrite": false,
+  "parameters": {
+    "period": "2026-09"
+  },
+  "run_folder": "runs/sales-vs-targets/4b7bd482-f725-4a12-b0d4-053b69d0532c",
+  "sources": [
+    {
+      "path": "data/sample/incoming/2026-09/sales_north.csv",
+      "input": "sales_files",
+      "sha256_before": "0c729a68504f66590d961b19f9efd4a1bffdb0d6301d1ff1e3643cb8657ba77a",
+      "sha256_after": "0c729a68504f66590d961b19f9efd4a1bffdb0d6301d1ff1e3643cb8657ba77a",
+      "unchanged": true
+    },
+    {
+      "path": "data/sample/incoming/2026-09/sales_south.csv",
+      "input": "sales_files",
+      "sha256_before": "65fa914ebd9c64c92553e0d5c4d49fcb552a8a45d0b96add3b5a3937c53253dc",
+      "sha256_after": "65fa914ebd9c64c92553e0d5c4d49fcb552a8a45d0b96add3b5a3937c53253dc",
+      "unchanged": true
+    },
+    {
+      "path": "data/sample/reference/targets.xlsx",
+      "input": "targets",
+      "sha256_before": "01d5f59d0479ec4623bdf8a62e226a5069981a14359153ff66f67e6977039dde",
+      "sha256_after": "01d5f59d0479ec4623bdf8a62e226a5069981a14359153ff66f67e6977039dde",
+      "unchanged": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "sales_files",
+      "status": "success",
+      "files": [
+        {
+          "path": "data/sample/incoming/2026-09/sales_north.csv",
+          "rows": 3,
+          "columns": [
+            "region",
+            "order_id",
+            "status",
+            "amount"
+          ]
+        },
+        {
+          "path": "data/sample/incoming/2026-09/sales_south.csv",
+          "rows": 2,
+          "columns": [
+            "region",
+            "order_id",
+            "status",
+            "amount"
+          ]
+        }
+      ],
+      "rows": 5,
+      "warnings": [],
+      "duration_s": 0.004
+    },
+    {
+      "id": "targets",
+      "status": "success",
+      "files": [
+        {
+          "path": "data/sample/reference/targets.xlsx",
+          "rows": 3,
+          "columns": [
+            "region",
+            "target",
+            "manager"
+          ]
+        }
+      ],
+      "rows": 3,
+      "warnings": [],
+      "duration_s": 0.009
+    }
+  ],
+  "steps": [
+    {
+      "id": "consolidate_sales",
+      "type": "concatenate",
+      "inputs": [
+        "sales_files"
+      ],
+      "output": "sales",
+      "rows_in": {
+        "sales_files": 5
+      },
+      "status": "success",
+      "rows_out": 5,
+      "warnings": [],
+      "details": {
+        "rows_by_part": {
+          "data/sample/incoming/2026-09/sales_north.csv": 3,
+          "data/sample/incoming/2026-09/sales_south.csv": 2
+        }
+      },
+      "duration_s": 0.005
+    },
+    {
+      "id": "closed_orders",
+      "type": "filter",
+      "inputs": [
+        "sales"
+      ],
+      "output": "closed_sales",
+      "rows_in": {
+        "sales": 5
+      },
+      "status": "success",
+      "rows_out": 3,
+      "warnings": [],
+      "details": {
+        "rows_in": 5,
+        "rows_out": 3,
+        "rows_removed": 2
+      },
+      "duration_s": 0.001
+    },
+    {
+      "id": "totals_per_region",
+      "type": "aggregate",
+      "inputs": [
+        "closed_sales"
+      ],
+      "output": "totals",
+      "rows_in": {
+        "closed_sales": 3
+      },
+      "status": "success",
+      "rows_out": 2,
+      "warnings": [],
+      "details": {
+        "rows_in": 3,
+        "groups": 2
+      },
+      "duration_s": 0.001
+    },
+    {
+      "id": "add_targets",
+      "type": "join",
+      "inputs": [
+        "totals",
+        "targets"
+      ],
+      "output": "totals_with_targets",
+      "rows_in": {
+        "totals": 2,
+        "targets": 3
+      },
+      "status": "success",
+      "rows_out": 2,
+      "warnings": [],
+      "details": {
+        "rows_left": 2,
+        "rows_right": 3,
+        "rows_out": 2,
+        "unmatched_left": 0
+      },
+      "duration_s": 0.01
+    },
+    {
+      "id": "keep_report_columns",
+      "type": "select",
+      "inputs": [
+        "totals_with_targets"
+      ],
+      "output": "report_columns",
+      "rows_in": {
+        "totals_with_targets": 2
+      },
+      "status": "success",
+      "rows_out": 2,
+      "warnings": [],
+      "details": {
+        "dropped_columns": [
+          "manager"
+        ]
+      },
+      "duration_s": 0.001
+    },
+    {
+      "id": "controls",
+      "type": "check",
+      "inputs": [
+        "report_columns"
+      ],
+      "output": "checked",
+      "rows_in": {
+        "report_columns": 2
+      },
+      "status": "success",
+      "rows_out": 2,
+      "warnings": [],
+      "details": {
+        "rows": 2,
+        "rules_passed": true
+      },
+      "duration_s": 0.001
+    },
+    {
+      "id": "order_by_sales",
+      "type": "sort",
+      "inputs": [
+        "checked"
+      ],
+      "output": "sales_vs_targets",
+      "rows_in": {
+        "checked": 2
+      },
+      "status": "success",
+      "rows_out": 2,
+      "warnings": [],
+      "details": {
+        "rows": 2
+      },
+      "duration_s": 0.001
+    }
+  ],
+  "outputs": [
+    {
+      "id": "powerbi_csv",
+      "input": "sales_vs_targets",
+      "type": "csv",
+      "path": "output/sales_vs_targets_2026-09.csv",
+      "metadata": "output/sales_vs_targets_2026-09.csv.metadata.json",
+      "status": "published",
+      "rows": 2,
+      "columns": [
+        "region",
+        "total_sales",
+        "target",
+        "order_count",
+        "average_order"
+      ],
+      "sha256": "f6e94179c7cc145725de6becabdf5ed5a0e3b5baedc4bea235726f0a119fa7ff",
+      "checks": [
+        "columns match expected_columns",
+        "file read back and compared value by value",
+        "2 row(s) read back"
+      ],
+      "duration_s": 0.004
+    },
+    {
+      "id": "powerbi_xlsx",
+      "input": "sales_vs_targets",
+      "type": "xlsx",
+      "path": "output/sales_vs_targets_2026-09.xlsx",
+      "metadata": "output/sales_vs_targets_2026-09.xlsx.metadata.json",
+      "status": "published",
+      "rows": 2,
+      "columns": [
+        "region",
+        "total_sales",
+        "target",
+        "order_count",
+        "average_order"
+      ],
+      "sha256": "106b21b09eeff2f038a23c75025d0343d4218099c95a15d86424309aa831ed4e",
+      "checks": [
+        "columns recorded",
+        "file read back and compared value by value",
+        "2 row(s) read back"
+      ],
+      "duration_s": 0.024
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "environment": {
+    "python": "3.14.7",
+    "platform": "Windows-11-10.0.26300-SP0"
+  }
+}

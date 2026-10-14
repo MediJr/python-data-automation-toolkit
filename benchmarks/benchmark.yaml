@@ -1,0 +1,48 @@
+# Benchmark workflow (synthetic data from benchmarks/generate_data.py, under benchmarks/work/).
+# The working root is benchmarks/work/, so the generated data and outputs stay out of git.
+workflow:
+  id: benchmark
+  schema_version: 1
+  description: Consolidate 12 branch files, filter, aggregate, join targets, export CSV and XLSX
+  root: work
+
+inputs:
+  - id: sales_files
+    type: csv
+    path: data/incoming/2026-09/sales_*.csv
+    required_columns: [region, order_id, status, order_date, amount]
+    types: {order_date: date, amount: decimal}
+  - id: targets
+    type: csv
+    path: data/reference/targets.csv
+    types: {target: decimal}
+
+steps:
+  - {id: consolidate, type: concatenate, input: sales_files, output: sales}
+  - id: closed
+    type: filter
+    input: sales
+    output: closed_sales
+    where:
+      - {column: status, op: eq, value: closed}
+      - {column: amount, op: gt, value: 0}
+  - id: per_region
+    type: aggregate
+    input: closed_sales
+    output: totals
+    group_by: [region]
+    metrics:
+      total_sales: {function: sum, column: amount}
+      order_count: {function: count}
+      average_order: {function: mean, column: amount, round: 2}
+  - {id: with_targets, type: join, input: [totals, targets], output: report, keys: [region], relationship: one_to_one, how: left, require_match: true}
+  - id: ordered
+    type: sort
+    input: closed_sales
+    output: detail
+    by: [{column: order_id}]
+
+outputs:
+  - {id: kpis_csv, input: report, type: csv, path: output/kpis.csv}
+  - {id: kpis_xlsx, input: report, type: xlsx, path: output/kpis.xlsx, sheet_name: KPIs}
+  - {id: detail_csv, input: detail, type: csv, path: output/closed_orders.csv}

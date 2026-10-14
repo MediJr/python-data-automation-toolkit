@@ -1,0 +1,103 @@
+# Monthly sales compared with targets (use cases UC-02 and UC-03). Synthetic example.
+# Run: data-automate run config/examples/sales_vs_targets.yaml --param period=2026-09
+workflow:
+  id: sales-vs-targets
+  schema_version: 1
+  description: Monthly sales per region compared with the regional targets
+  root: ../..
+
+parameters:
+  period:
+    type: month
+    description: Month to process (YYYY-MM)
+
+inputs:
+  - id: sales_files
+    type: csv
+    path: "data/sample/incoming/{period}/sales_*.csv"
+    required_columns: [region, order_id, status, amount]
+    types:
+      amount: decimal
+
+  - id: targets
+    type: xlsx
+    path: data/sample/reference/targets.xlsx
+    sheet: Targets
+    required_columns: [region, target]
+    types:
+      target: decimal
+
+steps:
+  - id: consolidate_sales
+    type: concatenate
+    input: sales_files
+    output: sales
+    add_source_column: source_file
+
+  - id: closed_orders
+    type: filter
+    input: sales
+    output: closed_sales
+    where:
+      - {column: status, op: eq, value: closed}
+      - {column: amount, op: gt, value: 0}
+
+  - id: totals_per_region
+    type: aggregate
+    input: closed_sales
+    output: totals
+    group_by: [region]
+    metrics:
+      total_sales: {function: sum, column: amount}
+      order_count: {function: count}
+      average_order: {function: mean, column: amount, round: 2}
+
+  - id: add_targets
+    type: join
+    input: [totals, targets]
+    output: totals_with_targets
+    keys: [region]
+    relationship: one_to_one
+    how: left
+    require_match: true          # every region with sales must have a target
+
+  - id: keep_report_columns
+    type: select
+    input: totals_with_targets
+    output: report_columns
+    columns: [region, total_sales, target, order_count, average_order]
+
+  - id: controls
+    type: check
+    input: report_columns
+    output: checked
+    min_rows: 1
+    not_null: [region, total_sales, target]
+    unique: [region]
+
+  - id: order_by_sales
+    type: sort
+    input: checked
+    output: sales_vs_targets
+    by:
+      - {column: total_sales, descending: true}
+
+outputs:
+  - id: powerbi_csv
+    input: sales_vs_targets
+    type: csv
+    path: "output/sales_vs_targets_{period}.csv"
+    expected_columns: [region, total_sales, target, order_count, average_order]
+
+  - id: powerbi_xlsx
+    input: sales_vs_targets
+    type: xlsx
+    path: "output/sales_vs_targets_{period}.xlsx"
+    sheet_name: Sales vs targets
+
+on_error: stop
+report:
+  formats: [json, markdown]
+  summary:
+    title: Sales versus targets
+    datasets: [sales_vs_targets]

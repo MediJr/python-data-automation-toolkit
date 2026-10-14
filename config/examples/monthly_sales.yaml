@@ -1,0 +1,55 @@
+# Monthly sales consolidation (use case UC-01). Synthetic example.
+# Run: data-automate run config/examples/monthly_sales.yaml --param period=2026-09
+workflow:
+  id: monthly-sales-report
+  schema_version: 1
+  description: Consolidate the monthly sales files of all branches and compute KPIs per region.
+  root: ../..                     # project folder; every path below is relative to it
+
+parameters:
+  period:
+    type: month                   # passed as --param period=YYYY-MM
+    description: Month to process
+
+inputs:
+  - id: sales_files
+    type: csv
+    path: "data/sample/incoming/{period}/sales_*.csv"
+    required_columns: [region, order_id, status, amount]
+    types:
+      amount: decimal
+    on_empty_match: fail
+
+steps:
+  - id: consolidate_sales
+    type: concatenate
+    input: sales_files
+    output: sales
+    add_source_column: source_file
+
+  - id: only_closed_orders
+    type: filter
+    input: sales
+    output: closed_sales
+    where:
+      - {column: status, op: eq, value: closed}
+
+  - id: calculate_kpis
+    type: aggregate
+    input: closed_sales
+    output: kpis
+    group_by: [region]
+    metrics:
+      total_sales: {column: amount, function: sum}
+      order_count: {column: order_id, function: count}
+
+outputs:
+  - id: export_powerbi
+    input: kpis
+    type: csv
+    path: "output/monthly_sales_{period}.csv"
+    expected_columns: [region, total_sales, order_count]
+
+on_error: stop
+report:
+  formats: [json, markdown]

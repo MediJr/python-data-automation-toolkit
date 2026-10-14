@@ -1,0 +1,7 @@
+2026-10-14T03:18:54.306Z INFO data_automation.engine: Run 047ee7f7-a7a4-4025-85a3-c98300c06773 of workflow 'monthly-sales-report' started (parameters {'period': '2026-09'})
+2026-10-14T03:18:54.312Z INFO data_automation.engine: Input 'sales_files': 5 row(s) from 2 file(s)
+2026-10-14T03:18:54.317Z INFO data_automation.engine: Step 'consolidate_sales' (concatenate): {'sales_files': 5} -> 5 row(s)
+2026-10-14T03:18:54.318Z INFO data_automation.engine: Step 'only_closed_orders' (filter): {'sales': 5} -> 3 row(s)
+2026-10-14T03:18:54.319Z INFO data_automation.engine: Step 'calculate_kpis' (aggregate): {'closed_sales': 3} -> 2 row(s)
+2026-10-14T03:18:54.323Z INFO data_automation.engine: Output 'export_powerbi' written and verified (2 row(s))
+2026-10-14T03:18:54.382Z INFO data_automation.engine: Run 047ee7f7-a7a4-4025-85a3-c98300c06773 finished: success

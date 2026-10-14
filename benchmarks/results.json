@@ -1,0 +1,50 @@
+{
+  "workload": {
+    "input_files": 13,
+    "input_rows": 120008,
+    "input_bytes": 5194302,
+    "steps": [
+      "consolidate (concatenate): 120000 rows",
+      "closed (filter): 90048 rows",
+      "per_region (aggregate): 8 rows",
+      "with_targets (join): 8 rows",
+      "ordered (sort): 90048 rows"
+    ],
+    "outputs": {
+      "output/kpis.csv": 8,
+      "output/kpis.xlsx": 8,
+      "output/closed_orders.csv": 90048
+    }
+  },
+  "method": "1 warm-up + 3 measured runs of 'python -m data_automation run'; wall time from process start to exit; memory = peak committed private memory of the process (Windows Job Object)",
+  "wall_seconds": [
+    6.54,
+    7.15,
+    7.49
+  ],
+  "wall_seconds_median": 7.15,
+  "peak_commit_mib": [
+    566.6,
+    565.9,
+    567.0
+  ],
+  "peak_commit_mib_max": 567.0,
+  "step_durations_s_last_run": {
+    "consolidate": 0.476,
+    "closed": 0.237,
+    "per_region": 0.276,
+    "with_targets": 0.008,
+    "ordered": 0.123
+  },
+  "input_durations_s_last_run": {
+    "sales_files": 1.111,
+    "targets": 0.001
+  },
+  "environment": {
+    "python": "3.14.7",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "cpu_count": 12,
+    "data_automation": "0.1.0"
+  }
+}

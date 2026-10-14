@@ -1,0 +1,72 @@
+{
+  "metadata_version": 1,
+  "workflow_id": "sales-vs-targets",
+  "run_id": "4b7bd482-f725-4a12-b0d4-053b69d0532c",
+  "generated_at": "2026-10-14T03:18:57.567Z",
+  "parameters": {
+    "period": "2026-09"
+  },
+  "output_id": "powerbi_xlsx",
+  "dataset": "sales_vs_targets",
+  "file": {
+    "path": "output/sales_vs_targets_2026-09.xlsx",
+    "type": "xlsx",
+    "sha256": "106b21b09eeff2f038a23c75025d0343d4218099c95a15d86424309aa831ed4e",
+    "rows": 2,
+    "format": {
+      "sheet_name": "Sales vs targets",
+      "dates": "date cells (yyyy-mm-dd)"
+    }
+  },
+  "columns": [
+    {
+      "name": "region",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "total_sales",
+      "type": "decimal",
+      "nullable": false
+    },
+    {
+      "name": "target",
+      "type": "decimal",
+      "nullable": false
+    },
+    {
+      "name": "order_count",
+      "type": "integer",
+      "nullable": false
+    },
+    {
+      "name": "average_order",
+      "type": "decimal",
+      "nullable": false
+    }
+  ],
+  "decimal_places": {
+    "total_sales": 2,
+    "target": 0,
+    "average_order": 2
+  },
+  "sources": [
+    {
+      "path": "data/sample/incoming/2026-09/sales_north.csv",
+      "sha256": "0c729a68504f66590d961b19f9efd4a1bffdb0d6301d1ff1e3643cb8657ba77a"
+    },
+    {
+      "path": "data/sample/incoming/2026-09/sales_south.csv",
+      "sha256": "65fa914ebd9c64c92553e0d5c4d49fcb552a8a45d0b96add3b5a3937c53253dc"
+    },
+    {
+      "path": "data/sample/reference/targets.xlsx",
+      "sha256": "01d5f59d0479ec4623bdf8a62e226a5069981a14359153ff66f67e6977039dde"
+    }
+  ],
+  "checks": [
+    "columns recorded",
+    "file read back and compared value by value",
+    "2 row(s) read back"
+  ]
+}

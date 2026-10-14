@@ -1,0 +1,13 @@
+2026-10-14T03:18:57.507Z INFO data_automation.engine: Run 4b7bd482-f725-4a12-b0d4-053b69d0532c of workflow 'sales-vs-targets' started (parameters {'period': '2026-09'})
+2026-10-14T03:18:57.513Z INFO data_automation.engine: Input 'sales_files': 5 row(s) from 2 file(s)
+2026-10-14T03:18:57.523Z INFO data_automation.engine: Input 'targets': 3 row(s) from 1 file(s)
+2026-10-14T03:18:57.528Z INFO data_automation.engine: Step 'consolidate_sales' (concatenate): {'sales_files': 5} -> 5 row(s)
+2026-10-14T03:18:57.529Z INFO data_automation.engine: Step 'closed_orders' (filter): {'sales': 5} -> 3 row(s)
+2026-10-14T03:18:57.530Z INFO data_automation.engine: Step 'totals_per_region' (aggregate): {'closed_sales': 3} -> 2 row(s)
+2026-10-14T03:18:57.538Z INFO data_automation.engine: Step 'add_targets' (join): {'totals': 2, 'targets': 3} -> 2 row(s)
+2026-10-14T03:18:57.541Z INFO data_automation.engine: Step 'keep_report_columns' (select): {'totals_with_targets': 2} -> 2 row(s)
+2026-10-14T03:18:57.542Z INFO data_automation.engine: Step 'controls' (check): {'report_columns': 2} -> 2 row(s)
+2026-10-14T03:18:57.542Z INFO data_automation.engine: Step 'order_by_sales' (sort): {'checked': 2} -> 2 row(s)
+2026-10-14T03:18:57.547Z INFO data_automation.engine: Output 'powerbi_csv' written and verified (2 row(s))
+2026-10-14T03:18:57.571Z INFO data_automation.engine: Output 'powerbi_xlsx' written and verified (2 row(s))
+2026-10-14T03:18:57.634Z INFO data_automation.engine: Run 4b7bd482-f725-4a12-b0d4-053b69d0532c finished: success

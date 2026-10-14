@@ -1,0 +1,4 @@
+region,order_id,status,amount
+North,SO-0001,closed,120.50
+North,SO-0002,open,80.00
+North,SO-0003,closed,42.00
